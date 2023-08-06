@@ -1,41 +1,157 @@
 # MyGolangTools
-My little golang tool kit
+
+- [MyGolangTools](#mygolangtools)
+  * [Documentation for the "commands" library in Golang](#documentation-for-the--commands--library-in-golang)
+    + [Description](#description)
+    + [Basic Usage](#basic-usage)
+    + [Methods](#methods)
+      - [1. `Cmd(input string) error`](#1--cmd-input-string--error-)
+      - [2. `Out(input string) (string, error)`](#2--out-input-string---string--error--)
+    + [Advanced Configuration](#advanced-configuration)
+      - [1. Shell Configuration](#1-shell-configuration)
+      - [2. Custom Shell Configuration on Linux](#2-custom-shell-configuration-on-linux)
+      - [3. Custom Standard I/O Configuration](#3-custom-standard-i-o-configuration)
+    + [Full Example](#full-example)
+
+<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
+
+## Documentation for the "commands" library in Golang
 
 
-### Commands
 
-This Go (Golang) library is called `tools` and provides functionalities for executing commands on different operating systems and shells. Below, I'll explain each of its features:
+### Description
 
-1. `Sh` struct:
-   This structure represents a configuration for command execution. It has different fields to configure the execution on different operating systems and shells.
+The "commands" library provides a simple interface for executing commands on Windows and Linux operating systems from a Golang application. The library handles the selection of the appropriate shell based on the operating system and allows customization of standard input and output options.
 
-2. `Windows` field:
-   - `PowerShell`: A boolean indicating whether to use PowerShell as the default shell on Windows systems. If `true`, PowerShell will be used; if `false`, the cmd shell will be used.
+### Basic Usage
 
-3. `Linux` field:
-   - `CustomSh`: A nested field that allows configuring a custom shell on Linux systems.
-      - `Enable`: A boolean indicating whether to enable the use of the custom shell defined in `ShName` and `ShArg`. If `true`, the custom shell specified in `ShName` and `ShArg` will be used.
-      - `ShName`: The name of the custom shell to be used.
-      - `ShArg`: The argument for executing the custom shell.
+1. Import the library into your Golang program:
 
-   - `Bash`: A boolean indicating whether to use Bash as the default shell on Linux systems. If `true`, Bash will be used; if `false`, the sh shell will be used.
+```go
+package main
 
-4. `CustomStd` field:
-   - `Enable`: A boolean indicating whether to configure the standard input, output, and error redirection options in a custom way. If `true`, the configurations defined for these fields will be used; if `false`, the default configurations will be used.
-   - `Stdin`: A boolean indicating whether to redirect the standard input of the executed command.
-   - `Stdout`: A boolean indicating whether to redirect the standard output of the executed command.
-   - `Stderr`: A boolean indicating whether to redirect the standard error output of the executed command.
+import "github.com/Tom5521/MyGolangTools/commands" 
+```
 
-5. `Cmd(input string) (string, error)` method:
-   This method takes an `input` argument, which is a string representing the command to be executed. It returns two values: the combined output of the command (stdout and stderr) as a string and an error if any issue occurred during command execution.
+2. Create an instance of the `Sh` struct to use the provided methods:
 
-   Inside the method, it determines the operating system being used and selects the appropriate shell and arguments based on the configuration set in the `Sh` struct.
+```go
+sh := commands.Sh{}
+```
 
-   If `CustomStd.Enable` is `true`, the standard input, output, and error of the command are configured based on the values of `Stdin`, `Stdout`, and `Stderr` fields. Otherwise, the default standard input, output, and error redirections (associated with the current console) are used.
+### Methods
 
-6. `Out(input string) (string, error)` method:
-   This method takes an `input` argument, which is a string representing the command to be executed. It returns two values: the combined output of the command (stdout and stderr) as a string and an error if any issue occurred during command execution.
+#### 1. `Cmd(input string) error`
 
-   This method is a utility that calls the `Cmd` method with a specific configuration to not redirect the standard output (`Stdout` is disabled). In case of an error during execution, it returns the error. If there were no errors, it returns the combined output of the command.
+The `Cmd` method is used to execute a command in the selected shell based on the operating system.
 
-In summary, this library provides a way to execute commands on different operating systems and shells, allowing the customization of standard input, output, and error options. It also offers specific methods to obtain only the output of the command without redirecting the standard output.
+Parameters:
+- `input` (string): The command to be executed.
+
+Return:
+- `error`: If there is an error during command execution.
+
+Example usage:
+
+```go
+sh.Windows.PowerShell = true // Use PowerShell on Windows
+err := sh.Cmd("ls -l")
+if err != nil {
+    fmt.Println("Error executing the command:", err)
+}
+```
+
+#### 2. `Out(input string) (string, error)`
+
+The `Out` method is used to execute a command in the selected shell and capture its output.
+
+Parameters:
+- `input` (string): The command to be executed.
+
+Return:
+- `string`: The output generated by the command.
+- `error`: If there is an error during command execution.
+
+Example usage:
+
+```go
+sh.Windows.PowerShell = false // Use cmd shell on Windows
+out, err := sh.Out("echo 'Hello, world!'")
+if err != nil {
+    fmt.Println("Error executing the command:", err)
+} else {
+    fmt.Println("Command output:", out)
+}
+```
+
+### Advanced Configuration
+
+The "commands" library allows you to configure some advanced options for customizing command execution:
+
+#### 1. Shell Configuration
+
+You can specify the shell to be used on Windows and Linux using the `Windows.PowerShell` and `Linux.Bash` fields, respectively.
+
+Example:
+
+```go
+sh.Windows.PowerShell = true // Use PowerShell on Windows
+sh.Linux.Bash = true // Use Bash on Linux
+```
+
+#### 2. Custom Shell Configuration on Linux
+
+On Linux systems, you can enable a custom shell and specify its name and arguments using the `Linux.CustomSh` field.
+
+Example:
+
+```go
+sh.Linux.CustomSh.Enable = true
+sh.Linux.CustomSh.ShName = "/usr/bin/zsh"
+sh.Linux.CustomSh.ShArg = "-c"
+```
+
+#### 3. Custom Standard I/O Configuration
+
+You can customize standard input and output options for commands using the `CustomStd` field.
+
+Example:
+
+```go
+sh.CustomStd.Enable = true
+sh.CustomStd.Stdin = true // Enable standard input
+sh.CustomStd.Stdout = true // Enable standard output
+sh.CustomStd.Stderr = true // Enable standard error output
+```
+
+### Full Example
+
+Here's a complete example of how to use the "commands" library with different configurations:
+
+```go
+package main
+
+import (
+	"fmt"
+    "github.com/Tom5521/MyGolangTools/commands"		
+)
+
+func main() {
+	sh := commands.Sh{}
+
+	sh.Windows.PowerShell = true // Use PowerShell on Windows
+	err := sh.Cmd("ls -l")
+	if err != nil {
+		fmt.Println("Error executing the command:", err)
+	}
+
+	sh.Windows.PowerShell = false // Use cmd shell on Windows
+	out, err := sh.Out("echo 'Hello, world!'")
+	if err != nil {
+		fmt.Println("Error executing the command:", err)
+	} else {
+		fmt.Println("Command output:", out)
+	}
+}
+```
+
