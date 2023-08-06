@@ -1,4 +1,4 @@
-package tools
+package commands
 
 import (
 	"os"
@@ -26,16 +26,15 @@ type Sh struct {
 	}
 }
 
-// Exec Cmd method  
-func (sh Sh) Cmd(input string) (string, error) {
+func (sh Sh) formatCmd() [2]string {
 	var (
 		shell, arg string
 		shells     = [4]string{"sh", "bash", "PowerShell.exe", "cmd"}
 		args       = [2]string{"-c", "/C"}
 	)
-	getos := runtime.GOOS
+	current_os := runtime.GOOS
 	// Sel windows shell formatting
-	if getos == "windows" {
+	if current_os == "windows" {
 		arg = args[1]
 		if sh.Windows.PowerShell {
 			shell = shells[2]
@@ -44,7 +43,7 @@ func (sh Sh) Cmd(input string) (string, error) {
 			arg = args[1]
 		}
 		// Set linux shell formatting
-	} else if getos == "linux" {
+	} else if current_os == "linux" {
 		if sh.Linux.Bash {
 			shell = shells[1]
 			arg = args[0]
@@ -57,8 +56,13 @@ func (sh Sh) Cmd(input string) (string, error) {
 			arg = sh.Linux.CustomSh.ShArg
 		}
 	}
+	return [2]string{shell, arg}
+}
 
-	cmd := exec.Command(shell, arg, input)
+// Exec Cmd method  
+func (sh Sh) Cmd(input string) error {
+	fmtcmd := sh.formatCmd()
+	cmd := exec.Command(fmtcmd[0], fmtcmd[1], input)
 	if sh.CustomStd.Enable {
 		if sh.CustomStd.Stdout {
 			cmd.Stdout = os.Stdout
@@ -75,20 +79,21 @@ func (sh Sh) Cmd(input string) (string, error) {
 		cmd.Stdout = os.Stdout
 	}
 
-	out, err := cmd.CombinedOutput()
-	return string(out), err
+	err := cmd.Run()
+
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Out method  
 func (sh Sh) Out(input string) (string, error) {
-	com := Sh{}
-	com.CustomStd.Enable = true
-	com.CustomStd.Stdout = false
-	com.CustomStd.Stdin = false
-	com.CustomStd.Stderr = false
-	out, err := com.Cmd(input)
+	fmtCmd := sh.formatCmd()
+	cmd := exec.Command(fmtCmd[0], fmtCmd[1], input)
+	out, err := cmd.Output()
 	if err != nil {
-		return out, err
+		return string(out), err
 	}
-	return out, nil
+	return string(out), nil
 }
