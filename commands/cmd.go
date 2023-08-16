@@ -61,8 +61,9 @@ func (sh Sh) formatCmd() [2]string {
 
 // Exec Cmd method  
 func (sh Sh) Cmd(input string) error {
-	fmtcmd := sh.formatCmd()
-	cmd := exec.Command(fmtcmd[0], fmtcmd[1], input)
+	fmtcmd := sh.formatCmd()                         // Format the command with the respective parameters
+	cmd := exec.Command(fmtcmd[0], fmtcmd[1], input) // declare the *os.Cmd val
+	// Set the standar input/output/error exit
 	if sh.CustomStd.Enable {
 		if sh.CustomStd.Stdout {
 			cmd.Stdout = os.Stdout
@@ -73,18 +74,20 @@ func (sh Sh) Cmd(input string) error {
 		if sh.CustomStd.Stderr {
 			cmd.Stderr = os.Stderr
 		}
-	} else {
+	} else { // Set the default values
 		cmd.Stderr = os.Stderr
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 	}
 
+	// Exec the command
 	err := cmd.Run()
 
+	// Return the error
 	if err != nil {
 		return err
 	}
-	return nil
+	return nil // Return nil
 }
 
 // Out method  
