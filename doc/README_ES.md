@@ -13,6 +13,12 @@
       - [2. Configuración del shell personalizado en Linux](#2-configuraci-n-del-shell-personalizado-en-linux)
       - [3. Configuración de entrada/salida estándar personalizada](#3-configuraci-n-de-entrada-salida-est-ndar-personalizada)
     + [Ejemplo completo](#ejemplo-completo)
+  * [Documentación de la librería "file"](#documentaci-n-de-la-librer-a--file-)
+    + [Importación](#importaci-n)
+    + [Función `CheckFile(file string) (bool, error)`](#funci-n--checkfile-file-string---bool--error--)
+    + [Función `ReadFileCont(file string) ([]byte, error)`](#funci-n--readfilecont-file-string-----byte--error--)
+    + [Función `ReWriteFile(file, text string) error`](#funci-n--rewritefile-file--text-string--error-)
+    + [Función `GetBinaryDir() (string, error)`](#funci-n--getbinarydir----string--error--)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
@@ -154,4 +160,100 @@ func main() {
 		fmt.Println("Salida del comando:", out)
 	}
 }
+```
+
+## Documentación de la librería "file"
+
+El paquete `file` proporciona funciones para trabajar con archivos en Go (Golang).
+
+### Importación
+
+```go
+import (
+	"github.com/Tom5521/MyGolangTools/file"
+)
+```
+
+### Función `CheckFile(file string) (bool, error)`
+
+La función `CheckFile` verifica si un archivo existe en la ubicación proporcionada.
+
+Parámetros:
+- `file` (string): Ruta al archivo que se desea verificar.
+
+Devuelve:
+- `bool`: `true` si el archivo existe, `false` si no existe.
+- `error`: Error si ocurre algún problema al verificar la existencia del archivo.
+
+Ejemplo de uso:
+
+```go
+exists, err := file.CheckFile("archivo.txt")
+if err != nil {
+    // Manejo de error
+}
+if exists {
+    fmt.Println("El archivo existe.")
+} else {
+    fmt.Println("El archivo no existe.")
+}
+```
+
+### Función `ReadFileCont(file string) ([]byte, error)`
+
+La función `ReadFileCont` lee el contenido de un archivo.
+
+Parámetros:
+- `file` (string): Ruta al archivo del que se desea leer el contenido.
+
+Devuelve:
+- `[]byte`: Contenido del archivo en forma de bytes.
+- `error`: Error si ocurre algún problema al leer el archivo.
+
+Ejemplo de uso:
+
+```go
+content, err := file.ReadFileCont("archivo.txt")
+if err != nil {
+    // Manejo de error
+}
+fmt.Println(string(content))
+```
+
+### Función `ReWriteFile(file, text string) error`
+
+La función `ReWriteFile` crea un nuevo archivo o sobrescribe un archivo existente con el texto proporcionado.
+
+Parámetros:
+- `file` (string): Ruta al archivo que se creará o sobrescribirá.
+- `text` (string): Texto que se escribirá en el archivo.
+
+Devuelve:
+- `error`: Error si ocurre algún problema al crear o escribir en el archivo.
+
+Ejemplo de uso:
+
+```go
+err := file.ReWriteFile("nuevo_archivo.txt", "Contenido del archivo")
+if err != nil {
+    // Manejo de error
+}
+```
+
+### Función `GetBinaryDir() (string, error)`
+
+La función `GetBinaryDir` obtiene el directorio en el que se encuentra el ejecutable binario.
+
+Devuelve:
+- `string`: Ruta al directorio del ejecutable.
+- `error`: Error si ocurre algún problema al obtener la ruta del ejecutable.
+
+Ejemplo de uso:
+
+```go
+dir, err := file.GetBinaryDir()
+if err != nil {
+    // Manejo de error
+}
+fmt.Println("Directorio del ejecutable:", dir)
 ```

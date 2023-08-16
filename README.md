@@ -12,12 +12,17 @@
       - [2. Custom Shell Configuration on Linux](#2-custom-shell-configuration-on-linux)
       - [3. Custom Standard I/O Configuration](#3-custom-standard-i-o-configuration)
     + [Full Example](#full-example)
-
-<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
+  * [Documentation for the "file" library in Golang](#documentation-for-the--file--library-in-golang)
+    + [Import](#import)
+    + [Function `CheckFile(file string) (bool, error)`](#function--checkfile-file-string---bool--error--)
+    + [Function `ReadFileCont(file string) ([]byte, error)`](#function--readfilecont-file-string-----byte--error--)
+    + [Function `ReWriteFile(file, text string) error`](#function--rewritefile-file--text-string--error-)
+    + [Function `GetBinaryDir() (string, error)`](#function--getbinarydir----string--error--)
 
 ## Documentation for the "commands" library in Golang
 
 
+<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
 ### Description
 
@@ -153,5 +158,101 @@ func main() {
 		fmt.Println("Command output:", out)
 	}
 }
+```
+
+## Documentation for the "file" library in Golang
+
+The `file` package provides functions for working with files in Go (Golang).
+
+### Import
+
+```go
+import (
+	"github.com/Tom5521/MyGolangTools/commands"
+)
+```
+
+### Function `CheckFile(file string) (bool, error)`
+
+The `CheckFile` function checks if a file exists at the provided location.
+
+Parameters:
+- `file` (string): Path to the file you want to check.
+
+Returns:
+- `bool`: `true` if the file exists, `false` if it doesn't.
+- `error`: Error if there's an issue while checking the file's existence.
+
+Usage example:
+
+```go
+exists, err := file.CheckFile("file.txt")
+if err != nil {
+    // Error handling
+}
+if exists {
+    fmt.Println("The file exists.")
+} else {
+    fmt.Println("The file doesn't exist.")
+}
+```
+
+### Function `ReadFileCont(file string) ([]byte, error)`
+
+The `ReadFileCont` function reads the content of a file.
+
+Parameters:
+- `file` (string): Path to the file from which you want to read the content.
+
+Returns:
+- `[]byte`: Content of the file as bytes.
+- `error`: Error if there's an issue while reading the file.
+
+Usage example:
+
+```go
+content, err := file.ReadFileCont("file.txt")
+if err != nil {
+    // Error handling
+}
+fmt.Println(string(content))
+```
+
+### Function `ReWriteFile(file, text string) error`
+
+The `ReWriteFile` function creates a new file or overwrites an existing file with the provided text.
+
+Parameters:
+- `file` (string): Path to the file that will be created or overwritten.
+- `text` (string): Text to be written to the file.
+
+Returns:
+- `error`: Error if there's an issue while creating or writing to the file.
+
+Usage example:
+
+```go
+err := file.ReWriteFile("new_file.txt", "File content")
+if err != nil {
+    // Error handling
+}
+```
+
+### Function `GetBinaryDir() (string, error)`
+
+The `GetBinaryDir` function retrieves the directory in which the binary executable is located.
+
+Returns:
+- `string`: Path to the executable's directory.
+- `error`: Error if there's an issue while obtaining the executable's path.
+
+Usage example:
+
+```go
+dir, err := file.GetBinaryDir()
+if err != nil {
+    // Error handling
+}
+fmt.Println("Executable directory:", dir)
 ```
 
