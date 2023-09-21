@@ -7,7 +7,8 @@ import (
 )
 
 type Sh struct {
-	Windows struct {
+	RunAsAdmin bool
+	Windows    struct {
 		PowerShell bool // Default terminal/shell is cmd
 	}
 	Linux struct {
@@ -26,8 +27,9 @@ type Sh struct {
 	}
 }
 
-func (sh Sh) formatCmd() [2]string {
+func (sh Sh) formatCmd() [4]string {
 	var (
+		runas      [2]string
 		shell, arg string
 		shells     = [4]string{"sh", "bash", "PowerShell.exe", "cmd"}
 		args       = [2]string{"-c", "/C"}
@@ -40,7 +42,10 @@ func (sh Sh) formatCmd() [2]string {
 			shell = shells[2]
 		} else {
 			shell = shells[3]
-			arg = args[1]
+		}
+		if sh.RunAsAdmin {
+			runas[0] = "runas"
+			runas[1] = "/user:administrator"
 		}
 		// Set linux shell formatting
 	} else if current_os == "linux" {
@@ -55,8 +60,11 @@ func (sh Sh) formatCmd() [2]string {
 			shell = sh.Linux.CustomSh.ShName
 			arg = sh.Linux.CustomSh.ShArg
 		}
+		if sh.RunAsAdmin {
+			runas[0] = "sudo"
+		}
 	}
-	return [2]string{shell, arg}
+	return [4]string{shell, runas[0], runas[1], arg}
 }
 
 // Exec Cmd method  
