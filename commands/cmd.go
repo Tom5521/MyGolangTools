@@ -69,8 +69,8 @@ func (sh Sh) formatCmd() [4]string {
 
 // Exec Cmd method  
 func (sh Sh) Cmd(input string) error {
-	fmtcmd := sh.formatCmd()                         // Format the command with the respective parameters
-	cmd := exec.Command(fmtcmd[0], fmtcmd[1], input) // declare the *os.Cmd val
+	fmtcmd := sh.formatCmd()                                               // Format the command with the respective parameters
+	cmd := exec.Command(fmtcmd[0], fmtcmd[1], fmtcmd[2], fmtcmd[3], input) // declare the *os.Cmd val
 	// Set the standar input/output/error exit
 	if sh.CustomStd.Enable {
 		if sh.CustomStd.Stdout {
