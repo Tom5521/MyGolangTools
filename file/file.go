@@ -5,16 +5,41 @@ import (
 	"path/filepath"
 )
 
+func FileSize(input string) (int64, error) { // filesize,error
+	var size int64
+	file, err := os.Stat(input)
+	if err != nil {
+		return 0, err
+	}
+	if !file.IsDir() {
+		return file.Size(), nil
+	} else {
+		err = filepath.Walk(input, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if !info.IsDir() {
+				size += info.Size()
+			}
+			return nil
+		})
+		if err != nil {
+			return 0, err
+		}
+		return size, nil
+	}
+}
+
 func CheckFile(file string) (bool, error) {
-	_, err := os.Stat(file)
-	if os.IsNotExist(err) {
+	_, err := os.Stat(file) // Get the stat of the file
+	if os.IsNotExist(err) { // Check if not exist
 		return false, err
 	}
 	return true, err
 }
 
-func ReadFileCont(file string) ([]byte, error) {
-	checkfile, errorcheck := CheckFile(file)
+func ReadFileCont(file string) ([]byte, error) { // Return byte data and error
+	checkfile, errorcheck := CheckFile(file) // Check if the file exist
 	if !checkfile || errorcheck != nil {
 		return nil, errorcheck
 	}
