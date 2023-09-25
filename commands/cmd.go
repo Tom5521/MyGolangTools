@@ -68,7 +68,7 @@ func (sh Sh) formatCmd() [4]string {
 // Exec Cmd method  
 func (sh Sh) Cmd(input string) error {
 	var cmd *exec.Cmd
-	if !sh.RunWithShell {
+	if sh.RunWithShell {
 		fmtcmd := sh.formatCmd()                                              // Format the command with the respective parameters
 		cmd = exec.Command(fmtcmd[0], fmtcmd[1], fmtcmd[2], fmtcmd[3], input) // declare the *os.Cmd val
 	} else {
