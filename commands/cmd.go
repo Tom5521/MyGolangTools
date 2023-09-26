@@ -62,7 +62,7 @@ func (sh Sh) formatCmd() [4]string {
 			sudo = "sudo"
 		}
 	}
-	return [4]string{shell,arg,sudo}
+	return [4]string{shell, arg, sudo}
 }
 
 // Exec Cmd method  
@@ -104,11 +104,48 @@ func (sh Sh) Cmd(input string) error {
 
 // Out method  
 func (sh Sh) Out(input string) (string, error) {
-	fmtCmd := sh.formatCmd()
-	cmd := exec.Command(fmtCmd[0], fmtCmd[1], input)
+	var cmd *exec.Cmd
+	if sh.RunWithShell {
+		fmtCmd := sh.formatCmd()
+		cmd = exec.Command(fmtCmd[0], fmtCmd[1], input)
+	} else {
+		input := strings.Fields(input)
+		cmd = exec.Command(input[0], input[1:]...)
+	}
 	out, err := cmd.Output()
 	if err != nil {
 		return string(out), err
 	}
 	return string(out), nil
+}
+
+func (sh Sh) Start(input string) error {
+	var cmd *exec.Cmd
+	if sh.RunWithShell {
+		fmtcmd := sh.formatCmd()
+		cmd = exec.Command(fmtcmd[0], fmtcmd[1], input)
+	} else {
+		input := strings.Fields(input)
+		cmd = exec.Command(input[0], input[1:]...)
+	}
+	if sh.CustomStd.Enable {
+		if sh.CustomStd.Stdout {
+			cmd.Stdout = os.Stdout
+		}
+		if sh.CustomStd.Stdin {
+			cmd.Stdin = os.Stdin
+		}
+		if sh.CustomStd.Stderr {
+			cmd.Stderr = os.Stderr
+		}
+	} else { // Set the default values
+		cmd.Stderr = os.Stderr
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+	}
+	err := cmd.Start()
+	if err != nil{
+		return err
+	}
+	return nil
 }
