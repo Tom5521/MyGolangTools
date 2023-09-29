@@ -10,6 +10,7 @@ import (
 type Sh struct {
 	RunWithShell bool
 	Windows      struct {
+		Silent     bool
 		PowerShell bool // Default terminal/shell is cmd
 	}
 	Linux struct {
@@ -34,12 +35,16 @@ func (sh Sh) formatCmd() [4]string {
 		sudo       string
 		shell, arg string
 		shells     = [4]string{"sh", "bash", "PowerShell.exe", "cmd"}
-		args       = [2]string{"-c", "/C"}
+		args       = [3]string{"-c", "/C", "/c"}
 	)
 	current_os := runtime.GOOS
 	// Sel windows shell formatting
 	if current_os == "windows" {
-		arg = args[1]
+		if sh.Windows.Silent {
+			arg = args[2]
+		} else {
+			arg = args[1]
+		}
 		if sh.Windows.PowerShell {
 			shell = shells[2]
 		} else {
@@ -47,12 +52,11 @@ func (sh Sh) formatCmd() [4]string {
 		}
 		// Set linux shell formatting
 	} else if current_os == "linux" {
+		arg = args[0]
 		if sh.Linux.Bash {
 			shell = shells[1]
-			arg = args[0]
 		} else {
 			shell = shells[0]
-			arg = args[0]
 		}
 		if sh.Linux.CustomSh.Enable {
 			shell = sh.Linux.CustomSh.ShName
@@ -144,7 +148,7 @@ func (sh Sh) Start(input string) error {
 		cmd.Stdout = os.Stdout
 	}
 	err := cmd.Start()
-	if err != nil{
+	if err != nil {
 		return err
 	}
 	return nil
