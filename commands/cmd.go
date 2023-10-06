@@ -139,7 +139,7 @@ func (sh Sh) setRunMode(input string) *exec.Cmd {
 	if sh.Windows.RunWithPowerShell || sh.Linux.RunWithShell {
 		prefix, fmtcmd := sh.formatCmd()
 		// Format the command with the respective parameters
-		cmd = exec.Command(prefix, fmtcmd) // declare the *os.Cmd val
+		cmd = exec.Command(prefix, fmtcmd, input) // declare the *os.Cmd val
 	} else {
 		input := strings.Fields(input)
 		cmd = exec.Command(input[0], input[1:]...)
