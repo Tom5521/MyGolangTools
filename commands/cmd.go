@@ -51,7 +51,6 @@ type Sh struct {
 func (sh Sh) formatCmd() string {
 	var (
 		LinuxCommand   string
-		command        string
 		WindowsCommand string
 	)
 	current_os := runtime.GOOS
@@ -99,12 +98,10 @@ func (sh Sh) formatCmd() string {
 					}
 				}()
 			}
-			command = fmt.Sprintf("powershell.exe %v%v%v%v%v%v%v%v /C ", SetTA, interactive, profile, encoded, nologo, exit, windowStyle_pre, windowStyle_Arg) // This is fucking infernal lol
-			return command
+			WindowsCommand = fmt.Sprintf("powershell.exe %v%v%v%v%v%v%v%v /C ", SetTA, interactive, profile, encoded, nologo, exit, windowStyle_pre, windowStyle_Arg) // This is fucking infernal lol
+		} else { // End of RunWithPowerShell declaration
+			WindowsCommand = "cmd.exe /C "
 		}
-		// End of RunWithPowerShell declaration
-		return "cmd.exe /C "
-
 		// Set linux shell formatting
 	}
 	if current_os == "linux" {
@@ -121,6 +118,10 @@ func (sh Sh) formatCmd() string {
 			sudo = "sudo "
 		}
 		LinuxCommand = sudo + shell + arg
+	}
+	if runtime.GOOS == "windows" {
+		return WindowsCommand
+	} else if runtime.GOOS == "linux" {
 		return LinuxCommand
 	} else {
 		return ""
@@ -129,7 +130,7 @@ func (sh Sh) formatCmd() string {
 func (sh Sh) setRunMode(input string) *exec.Cmd {
 	var cmd *exec.Cmd
 	if sh.Windows.RunWithPowerShell || sh.Linux.RunWithShell {
-		fmtcmd := sh.formatCmd()                     // Format the command with the respective parameters
+		fmtcmd := strings.Fields(sh.formatCmd())     // Format the command with the respective parameters
 		cmd = exec.Command(fmtcmd[0], fmtcmd[1:]...) // declare the *os.Cmd val
 	} else {
 		input := strings.Fields(input)
