@@ -48,9 +48,11 @@ type Sh struct {
 	}
 }
 
-func (sh Sh) formatCmd() []string {
+func (sh Sh) formatCmd() string {
 	var (
-		command string
+		LinuxCommand   string
+		command        string
+		WindowsCommand string
 	)
 	current_os := runtime.GOOS
 	// Sel windows shell formatting
@@ -98,13 +100,14 @@ func (sh Sh) formatCmd() []string {
 				}()
 			}
 			command = fmt.Sprintf("powershell.exe %v%v%v%v%v%v%v%v /C ", SetTA, interactive, profile, encoded, nologo, exit, windowStyle_pre, windowStyle_Arg) // This is fucking infernal lol
-			return strings.Fields(command)
+			return command
 		}
 		// End of RunWithPowerShell declaration
-		return strings.Fields("cmd.exe /C ")
+		return "cmd.exe /C "
 
 		// Set linux shell formatting
-	} else if current_os == "linux" {
+	}
+	if current_os == "linux" {
 		var shell, sudo, arg string
 		if sh.Linux.Bash {
 			shell = "bash "
@@ -117,10 +120,11 @@ func (sh Sh) formatCmd() []string {
 		if sh.Linux.RunWithSudo {
 			sudo = "sudo "
 		}
-		command = sudo + shell + arg
-		return strings.Fields(command)
+		LinuxCommand = sudo + shell + arg
+		return LinuxCommand
+	} else {
+		return ""
 	}
-	return []string{}
 }
 func (sh Sh) setRunMode(input string) *exec.Cmd {
 	var cmd *exec.Cmd
