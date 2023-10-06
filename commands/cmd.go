@@ -97,7 +97,7 @@ func (sh Sh) formatCmd() []string {
 					}
 				}()
 			}
-			command = fmt.Sprintf("powershell.exe %v%v%v%v%v%v%v%v ", SetTA, interactive, profile, encoded, nologo, exit, windowStyle_pre, windowStyle_Arg) // This is fucking infernal lol
+			command = fmt.Sprintf("powershell.exe %v%v%v%v%v%v%v%v /C ", SetTA, interactive, profile, encoded, nologo, exit, windowStyle_pre, windowStyle_Arg) // This is fucking infernal lol
 			return strings.Fields(command)
 		}
 		// End of RunWithPowerShell declaration
