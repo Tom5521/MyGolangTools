@@ -48,10 +48,12 @@ type Sh struct {
 	}
 }
 
-func (sh Sh) formatCmd() string {
+func (sh Sh) formatCmd() (string, string) {
 	var (
 		LinuxCommand   string
 		WindowsCommand string
+		WindowsPrefix  string
+		LinuxPrefix    string
 	)
 	current_os := runtime.GOOS
 	// Sel windows shell formatting
@@ -98,15 +100,16 @@ func (sh Sh) formatCmd() string {
 					}
 				}()
 			}
-			WindowsCommand = fmt.Sprintf("powershell.exe %v%v%v%v%v%v%v%v /C ", SetTA, interactive, profile, encoded, nologo, exit, windowStyle_pre, windowStyle_Arg) // This is fucking infernal lol
-			fmt.Println(WindowsCommand)
+			WindowsCommand = fmt.Sprintf(" %v%v%v%v%v%v%v%v /C ", SetTA, interactive, profile, encoded, nologo, exit, windowStyle_pre, windowStyle_Arg) // This is fucking infernal lol
+			WindowsPrefix = "powershell.exe"
 		} else { // End of RunWithPowerShell declaration
-			WindowsCommand = "cmd.exe /C "
+			WindowsCommand = " /C "
+			WindowsPrefix = "cmd.exe"
 		}
 		// Set linux shell formatting
 	}
 	if current_os == "linux" {
-		var shell, sudo, arg string
+		var shell, arg string
 		if sh.Linux.Bash {
 			shell = "bash "
 			arg = "-c "
@@ -116,23 +119,27 @@ func (sh Sh) formatCmd() string {
 			arg = sh.Linux.CustomSh.ShArg
 		}
 		if sh.Linux.RunWithSudo {
-			sudo = "sudo "
+			LinuxPrefix = "sudo "
+			LinuxCommand = shell + arg
+		} else {
+			LinuxCommand = arg
+			LinuxPrefix = shell
 		}
-		LinuxCommand = sudo + shell + arg
 	}
 	if runtime.GOOS == "windows" {
-		return WindowsCommand
+		return WindowsPrefix, WindowsCommand
 	} else if runtime.GOOS == "linux" {
-		return LinuxCommand
+		return LinuxPrefix, LinuxCommand
 	} else {
-		return ""
+		return "", ""
 	}
 }
 func (sh Sh) setRunMode(input string) *exec.Cmd {
 	var cmd *exec.Cmd
 	if sh.Windows.RunWithPowerShell || sh.Linux.RunWithShell {
-		fmtcmd := strings.Fields(sh.formatCmd())     // Format the command with the respective parameters
-		cmd = exec.Command(fmtcmd[0], fmtcmd[1:]...) // declare the *os.Cmd val
+		prefix, fmtcmd := sh.formatCmd()
+		// Format the command with the respective parameters
+		cmd = exec.Command(prefix, fmtcmd) // declare the *os.Cmd val
 	} else {
 		input := strings.Fields(input)
 		cmd = exec.Command(input[0], input[1:]...)
