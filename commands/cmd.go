@@ -99,6 +99,7 @@ func (sh Sh) formatCmd() string {
 				}()
 			}
 			WindowsCommand = fmt.Sprintf("powershell.exe %v%v%v%v%v%v%v%v /C ", SetTA, interactive, profile, encoded, nologo, exit, windowStyle_pre, windowStyle_Arg) // This is fucking infernal lol
+			fmt.Println(WindowsCommand)
 		} else { // End of RunWithPowerShell declaration
 			WindowsCommand = "cmd.exe /C "
 		}
@@ -143,6 +144,7 @@ func (sh Sh) setRunMode(input string) *exec.Cmd {
 // Exec Cmd method  
 func (sh Sh) Cmd(input string) error {
 	cmd := sh.setRunMode(input)
+	fmt.Println(cmd)
 	// Set the standar input/output/error exit
 	if sh.CustomStd.Enable {
 		if sh.CustomStd.Stdout {
