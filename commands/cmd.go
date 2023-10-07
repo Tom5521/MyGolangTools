@@ -155,6 +155,24 @@ func (sh Sh) setRunMode() *exec.Cmd {
 	}
 	return cmd
 }
+func (sh Sh) setStd(cmd *exec.Cmd) *exec.Cmd {
+	if sh.CustomStd.Enable {
+		if sh.CustomStd.Stdout {
+			cmd.Stdout = os.Stdout
+		}
+		if sh.CustomStd.Stdin {
+			cmd.Stdin = os.Stdin
+		}
+		if sh.CustomStd.Stderr {
+			cmd.Stderr = os.Stderr
+		}
+	} else { // Set the default values
+		cmd.Stderr = os.Stderr
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+	}
+	return cmd
+}
 
 // Exec Cmd method  
 func (sh Sh) Cmd(input string) error {
@@ -201,21 +219,7 @@ func (sh Sh) Out(input string) (string, error) {
 func (sh Sh) Start(input string) error {
 	sh.input = input
 	cmd := sh.setRunMode()
-	if sh.CustomStd.Enable {
-		if sh.CustomStd.Stdout {
-			cmd.Stdout = os.Stdout
-		}
-		if sh.CustomStd.Stdin {
-			cmd.Stdin = os.Stdin
-		}
-		if sh.CustomStd.Stderr {
-			cmd.Stderr = os.Stderr
-		}
-	} else { // Set the default values
-		cmd.Stderr = os.Stderr
-		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
-	}
+	cmd = sh.setStd(cmd)
 	err := cmd.Start()
 	if err != nil {
 		return err
@@ -223,10 +227,13 @@ func (sh Sh) Start(input string) error {
 	return nil
 }
 
+// Return formatted cmd
 func (sh Sh) GetCmdArg() *exec.Cmd {
 	cmd := sh.setRunMode()
+	cmd = sh.setStd(cmd)
 	return cmd
 }
+
 // window mode config
 func (sh Sh) SetWindowPSMode(mode winmode) {
 	sh.Windows.PowerShell.windowStyle.Enabled = true
