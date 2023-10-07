@@ -153,6 +153,7 @@ func (sh Sh) setRunMode() *exec.Cmd {
 	if sh.Path != "" {
 		cmd.Path = sh.Path
 	}
+	cmd = sh.setStd(cmd)
 	return cmd
 }
 func (sh Sh) setStd(cmd *exec.Cmd) *exec.Cmd {
@@ -178,23 +179,6 @@ func (sh Sh) setStd(cmd *exec.Cmd) *exec.Cmd {
 func (sh Sh) Cmd(input string) error {
 	sh.input = input
 	cmd := sh.setRunMode()
-	// Set the standar input/output/error exit
-	if sh.CustomStd.Enable {
-		if sh.CustomStd.Stdout {
-			cmd.Stdout = os.Stdout
-		}
-		if sh.CustomStd.Stdin {
-			cmd.Stdin = os.Stdin
-		}
-		if sh.CustomStd.Stderr {
-			cmd.Stderr = os.Stderr
-		}
-	} else { // Set the default values
-		cmd.Stderr = os.Stderr
-		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
-	}
-
 	// Exec the command
 	err := cmd.Run()
 
@@ -219,7 +203,6 @@ func (sh Sh) Out(input string) (string, error) {
 func (sh Sh) Start(input string) error {
 	sh.input = input
 	cmd := sh.setRunMode()
-	cmd = sh.setStd(cmd)
 	err := cmd.Start()
 	if err != nil {
 		return err
@@ -230,7 +213,6 @@ func (sh Sh) Start(input string) error {
 // Return formatted cmd
 func (sh Sh) GetCmdArg() *exec.Cmd {
 	cmd := sh.setRunMode()
-	cmd = sh.setStd(cmd)
 	return cmd
 }
 
