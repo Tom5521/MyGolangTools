@@ -8,6 +8,14 @@ import (
 	"strings"
 )
 
+type winmode int
+
+const (
+	WinmodeHidden winmode = iota
+	WinmodeMaximized
+	WinmodeMinimized
+)
+
 type Sh struct {
 	input   string
 	Path    string
@@ -15,7 +23,7 @@ type Sh struct {
 		RunWithPowerShell bool
 		// To better understand this type in your favorite command interpreter (in Windows) "powershell.exe -h".
 		PowerShell struct {
-			WindowStyle struct {
+			windowStyle struct {
 				// The first one in the list that is true will be the one chosen to be implemented if there is more than one true value.
 				Enabled   bool
 				Hidden    bool
@@ -82,9 +90,9 @@ func (sh Sh) formatCmd() string {
 			if PShArgs.NoExit {
 				exit = "-NoExit "
 			}
-			if PShArgs.WindowStyle.Enabled {
+			if PShArgs.windowStyle.Enabled {
 				func() {
-					WSpar := PShArgs.WindowStyle
+					WSpar := PShArgs.windowStyle
 					windowStyle_pre = "-WindowStyle "
 					if WSpar.Hidden {
 						windowStyle_Arg = "Hidden"
@@ -124,7 +132,6 @@ func (sh Sh) formatCmd() string {
 		}
 	}
 	if runtime.GOOS == "windows" {
-		fmt.Println("windows cmd: ", WindowsCommand)
 		return WindowsCommand
 	} else if runtime.GOOS == "linux" {
 		return LinuxCommand
@@ -137,15 +144,8 @@ func (sh Sh) setRunMode() *exec.Cmd {
 	if sh.Windows.RunWithPowerShell || sh.Linux.RunWithShell {
 		fmtcmd := sh.formatCmd()
 		command := strings.Fields(fmtcmd)
-		fmt.Println("fields:", command)
 		// Format the command with the respective parameters
-		testfmt := func(set string, args ...string) string {
-			return fmt.Sprint(set, strings.Join(args, " "))
-		}
-		fmt.Println("Command to exec:", testfmt(command[0], command[1:]...))
-		fmt.Println("Running cmd...")
 		cmd = exec.Command(command[0], command[1:]...) // declare the *os.Cmd val
-		fmt.Println("_exec: ", cmd)
 	} else {
 		input := strings.Fields(sh.input)
 		cmd = exec.Command(input[0], input[1:]...)
@@ -160,7 +160,6 @@ func (sh Sh) setRunMode() *exec.Cmd {
 func (sh Sh) Cmd(input string) error {
 	sh.input = input
 	cmd := sh.setRunMode()
-	fmt.Println(cmd)
 	// Set the standar input/output/error exit
 	if sh.CustomStd.Enable {
 		if sh.CustomStd.Stdout {
@@ -227,4 +226,16 @@ func (sh Sh) Start(input string) error {
 func (sh Sh) GetCmdArg() *exec.Cmd {
 	cmd := sh.setRunMode()
 	return cmd
+}
+
+func (sh Sh) SetWindowPSMode(mode winmode) {
+	sh.Windows.PowerShell.windowStyle.Enabled = true
+	switch mode {
+	case 0:
+		sh.Windows.PowerShell.windowStyle.Hidden = true
+	case 1:
+		sh.Windows.PowerShell.windowStyle.Maximized = true
+	case 2:
+		sh.Windows.PowerShell.windowStyle.Minimized = true
+	}
 }
