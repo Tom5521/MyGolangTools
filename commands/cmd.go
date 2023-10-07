@@ -227,7 +227,7 @@ func (sh Sh) GetCmdArg() *exec.Cmd {
 	cmd := sh.setRunMode()
 	return cmd
 }
-
+// window mode config
 func (sh Sh) SetWindowPSMode(mode winmode) {
 	sh.Windows.PowerShell.windowStyle.Enabled = true
 	switch mode {
