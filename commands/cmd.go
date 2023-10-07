@@ -9,6 +9,7 @@ import (
 )
 
 type Sh struct {
+	input   string
 	Path    string
 	Windows struct {
 		RunWithPowerShell bool
@@ -48,12 +49,10 @@ type Sh struct {
 	}
 }
 
-func (sh Sh) formatCmd() (string, string) {
+func (sh Sh) formatCmd() string {
 	var (
 		LinuxCommand   string
 		WindowsCommand string
-		WindowsPrefix  string
-		LinuxPrefix    string
 	)
 	current_os := runtime.GOOS
 	// Sel windows shell formatting
@@ -100,11 +99,9 @@ func (sh Sh) formatCmd() (string, string) {
 					}
 				}()
 			}
-			WindowsCommand = fmt.Sprintf(" %v%v%v%v%v%v%v%v /C ", SetTA, interactive, profile, encoded, nologo, exit, windowStyle_pre, windowStyle_Arg) // This is fucking infernal lol
-			WindowsPrefix = "powershell.exe"
+			WindowsCommand = fmt.Sprintf("powershell.exe %v%v%v%v%v%v%v%v -Command %v", SetTA, interactive, profile, encoded, nologo, exit, windowStyle_pre, windowStyle_Arg, sh.input) // This is fucking infernal lol
 		} else { // End of RunWithPowerShell declaration
-			WindowsCommand = " /C "
-			WindowsPrefix = "cmd.exe"
+			WindowsCommand = "cmd.exe /C"
 		}
 		// Set linux shell formatting
 	}
@@ -118,39 +115,51 @@ func (sh Sh) formatCmd() (string, string) {
 			shell = sh.Linux.CustomSh.ShName
 			arg = sh.Linux.CustomSh.ShArg
 		}
-		if sh.Linux.RunWithSudo {
-			LinuxPrefix = "sudo "
-			LinuxCommand = shell + arg
-		} else {
-			LinuxCommand = arg
-			LinuxPrefix = shell
+		if sh.Linux.RunWithSudo && sh.Linux.RunWithShell {
+			LinuxCommand = "sudo " + shell + arg + sh.input
+		} else if sh.Linux.RunWithSudo && !sh.Linux.RunWithShell {
+			LinuxCommand = "sudo " + sh.input
+		} else if sh.Linux.RunWithShell {
+			LinuxCommand = shell + arg + sh.input
 		}
 	}
 	if runtime.GOOS == "windows" {
-		return WindowsPrefix, WindowsCommand
+		fmt.Println("windows cmd: ", WindowsCommand)
+		return WindowsCommand
 	} else if runtime.GOOS == "linux" {
-		return LinuxPrefix, LinuxCommand
+		return LinuxCommand
 	} else {
-		return "", ""
+		return ""
 	}
 }
-func (sh Sh) setRunMode(input string) *exec.Cmd {
+func (sh Sh) setRunMode() *exec.Cmd {
 	var cmd *exec.Cmd
 	if sh.Windows.RunWithPowerShell || sh.Linux.RunWithShell {
-		prefix, fmtcmd := sh.formatCmd()
+		fmtcmd := sh.formatCmd()
+		command := strings.Fields(fmtcmd)
+		fmt.Println("fields:", command)
 		// Format the command with the respective parameters
-		cmd = exec.Command(prefix, fmtcmd, input) // declare the *os.Cmd val
+		testfmt := func(set string, args ...string) string {
+			return fmt.Sprint(set, strings.Join(args, " "))
+		}
+		fmt.Println("Command to exec:", testfmt(command[0], command[1:]...))
+		fmt.Println("Running cmd...")
+		cmd = exec.Command(command[0], command[1:]...) // declare the *os.Cmd val
+		fmt.Println("_exec: ", cmd)
 	} else {
-		input := strings.Fields(input)
+		input := strings.Fields(sh.input)
 		cmd = exec.Command(input[0], input[1:]...)
 	}
-	cmd.Path = sh.Path
+	if sh.Path != "" {
+		cmd.Path = sh.Path
+	}
 	return cmd
 }
 
 // Exec Cmd method  
 func (sh Sh) Cmd(input string) error {
-	cmd := sh.setRunMode(input)
+	sh.input = input
+	cmd := sh.setRunMode()
 	fmt.Println(cmd)
 	// Set the standar input/output/error exit
 	if sh.CustomStd.Enable {
@@ -181,7 +190,8 @@ func (sh Sh) Cmd(input string) error {
 
 // Out method  
 func (sh Sh) Out(input string) (string, error) {
-	cmd := sh.setRunMode(input)
+	sh.input = input
+	cmd := sh.setRunMode()
 	out, err := cmd.Output()
 	if err != nil {
 		return string(out), err
@@ -190,7 +200,8 @@ func (sh Sh) Out(input string) (string, error) {
 }
 
 func (sh Sh) Start(input string) error {
-	cmd := sh.setRunMode(input)
+	sh.input = input
+	cmd := sh.setRunMode()
 	if sh.CustomStd.Enable {
 		if sh.CustomStd.Stdout {
 			cmd.Stdout = os.Stdout
@@ -213,7 +224,7 @@ func (sh Sh) Start(input string) error {
 	return nil
 }
 
-func (sh Sh) GetCmdArg(input string) *exec.Cmd {
-	cmd := sh.setRunMode(input)
+func (sh Sh) GetCmdArg() *exec.Cmd {
+	cmd := sh.setRunMode()
 	return cmd
 }
