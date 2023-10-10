@@ -1,21 +1,48 @@
 package commands
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"runtime"
 	"strings"
 )
 
+type winmode int
+
+const (
+	WinmodeHidden winmode = iota
+	WinmodeMaximized
+	WinmodeMinimized
+)
+
 type Sh struct {
-	RunWithShell bool
-	Windows      struct {
-		Silent     bool
-		PowerShell bool // Default terminal/shell is cmd
+	input   string
+	Path    string
+	Windows struct {
+		RunWithPowerShell bool
+		// To better understand this type in your favorite command interpreter (in Windows) "powershell.exe -h".
+		PowerShell struct {
+			windowStyle struct {
+				// The first one in the list that is true will be the one chosen to be implemented if there is more than one true value.
+				Enabled   bool
+				Hidden    bool
+				Minimized bool
+				Maximized bool
+			}
+			NonInteractive bool
+			Mta            bool
+			NoProfile      bool
+			EncodedCommand bool
+			Sta            bool
+			NoExit         bool
+			NoLogo         bool
+		}
 	}
 	Linux struct {
-		RunWithSudo bool
-		CustomSh    struct {
+		RunWithShell bool
+		RunWithSudo  bool
+		CustomSh     struct {
 			Enable bool
 			ShName string
 			ShArg  string // Shell execution cmd
@@ -30,56 +57,106 @@ type Sh struct {
 	}
 }
 
-func (sh Sh) formatCmd() [4]string {
+func (sh Sh) formatCmd() string {
 	var (
-		sudo       string
-		shell, arg string
-		shells     = [4]string{"sh", "bash", "PowerShell.exe", "cmd"}
-		args       = [3]string{"-c", "/C", "/c"}
+		LinuxCommand   string
+		WindowsCommand string
 	)
 	current_os := runtime.GOOS
 	// Sel windows shell formatting
 	if current_os == "windows" {
-		if sh.Windows.Silent {
-			arg = args[2]
-		} else {
-			arg = args[1]
-		}
-		if sh.Windows.PowerShell {
-			shell = shells[2]
-		} else {
-			shell = shells[3]
+		// Start of RunWithPowerShell declaration
+		if sh.Windows.RunWithPowerShell {
+			PShArgs := sh.Windows.PowerShell
+			var SetTA, interactive, profile, encoded, nologo, exit, windowStyle_pre, windowStyle_Arg string
+			if PShArgs.Mta && !PShArgs.Sta { // MTA set
+				SetTA = "-Mta "
+			}
+			if PShArgs.Sta && !PShArgs.Mta { // STA set
+				SetTA = "-Sta "
+			}
+			if PShArgs.NonInteractive {
+				interactive = "-NonInteractive "
+			}
+			if PShArgs.NoProfile {
+				profile = "-NoProfile "
+			}
+			if PShArgs.EncodedCommand {
+				encoded = "-EncodedCommand "
+			}
+			if PShArgs.NoLogo {
+				nologo = "-NoLogo "
+			}
+			if PShArgs.NoExit {
+				exit = "-NoExit "
+			}
+			if PShArgs.windowStyle.Enabled {
+				func() {
+					WSpar := PShArgs.windowStyle
+					windowStyle_pre = "-WindowStyle "
+					if WSpar.Hidden {
+						windowStyle_Arg = "Hidden"
+						return
+					}
+					if WSpar.Maximized {
+						windowStyle_Arg = "Maximized"
+						return
+					}
+					if WSpar.Minimized {
+						windowStyle_Arg = "Minimized"
+					}
+				}()
+			}
+			WindowsCommand = fmt.Sprintf("powershell.exe %v%v%v%v%v%v%v%v -Command %v", SetTA, interactive, profile, encoded, nologo, exit, windowStyle_pre, windowStyle_Arg, sh.input) // This is fucking infernal lol
+		} else { // End of RunWithPowerShell declaration
+			WindowsCommand = "cmd.exe /C"
 		}
 		// Set linux shell formatting
-	} else if current_os == "linux" {
-		arg = args[0]
+	}
+	if current_os == "linux" {
+		var shell, arg string
 		if sh.Linux.Bash {
-			shell = shells[1]
-		} else {
-			shell = shells[0]
+			shell = "bash "
+			arg = "-c "
 		}
 		if sh.Linux.CustomSh.Enable {
 			shell = sh.Linux.CustomSh.ShName
 			arg = sh.Linux.CustomSh.ShArg
 		}
-		if sh.Linux.RunWithSudo {
-			sudo = "sudo"
+		if sh.Linux.RunWithSudo && sh.Linux.RunWithShell {
+			LinuxCommand = "sudo " + shell + arg + sh.input
+		} else if sh.Linux.RunWithSudo && !sh.Linux.RunWithShell {
+			LinuxCommand = "sudo " + sh.input
+		} else if sh.Linux.RunWithShell {
+			LinuxCommand = shell + arg + sh.input
 		}
 	}
-	return [4]string{shell, arg, sudo}
-}
-
-// Exec Cmd method  
-func (sh Sh) Cmd(input string) error {
-	var cmd *exec.Cmd
-	if sh.RunWithShell {
-		fmtcmd := sh.formatCmd()                                              // Format the command with the respective parameters
-		cmd = exec.Command(fmtcmd[0], fmtcmd[1], fmtcmd[2], fmtcmd[3], input) // declare the *os.Cmd val
+	if runtime.GOOS == "windows" {
+		return WindowsCommand
+	} else if runtime.GOOS == "linux" {
+		return LinuxCommand
 	} else {
-		input := strings.Fields(input)
+		return ""
+	}
+}
+func (sh Sh) setRunMode() *exec.Cmd {
+	var cmd *exec.Cmd
+	if sh.Windows.RunWithPowerShell || sh.Linux.RunWithShell {
+		fmtcmd := sh.formatCmd()
+		command := strings.Fields(fmtcmd)
+		// Format the command with the respective parameters
+		cmd = exec.Command(command[0], command[1:]...) // declare the *os.Cmd val
+	} else {
+		input := strings.Fields(sh.input)
 		cmd = exec.Command(input[0], input[1:]...)
 	}
-	// Set the standar input/output/error exit
+	if sh.Path != "" {
+		cmd.Path = sh.Path
+	}
+	cmd = sh.setStd(cmd)
+	return cmd
+}
+func (sh Sh) setStd(cmd *exec.Cmd) *exec.Cmd {
 	if sh.CustomStd.Enable {
 		if sh.CustomStd.Stdout {
 			cmd.Stdout = os.Stdout
@@ -95,7 +172,13 @@ func (sh Sh) Cmd(input string) error {
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 	}
+	return cmd
+}
 
+// Exec Cmd method  
+func (sh Sh) Cmd(input string) error {
+	sh.input = input
+	cmd := sh.setRunMode()
 	// Exec the command
 	err := cmd.Run()
 
@@ -108,14 +191,8 @@ func (sh Sh) Cmd(input string) error {
 
 // Out method  
 func (sh Sh) Out(input string) (string, error) {
-	var cmd *exec.Cmd
-	if sh.RunWithShell {
-		fmtCmd := sh.formatCmd()
-		cmd = exec.Command(fmtCmd[0], fmtCmd[1], input)
-	} else {
-		input := strings.Fields(input)
-		cmd = exec.Command(input[0], input[1:]...)
-	}
+	sh.input = input
+	cmd := sh.setRunMode()
 	out, err := cmd.Output()
 	if err != nil {
 		return string(out), err
@@ -124,32 +201,30 @@ func (sh Sh) Out(input string) (string, error) {
 }
 
 func (sh Sh) Start(input string) error {
-	var cmd *exec.Cmd
-	if sh.RunWithShell {
-		fmtcmd := sh.formatCmd()
-		cmd = exec.Command(fmtcmd[0], fmtcmd[1], input)
-	} else {
-		input := strings.Fields(input)
-		cmd = exec.Command(input[0], input[1:]...)
-	}
-	if sh.CustomStd.Enable {
-		if sh.CustomStd.Stdout {
-			cmd.Stdout = os.Stdout
-		}
-		if sh.CustomStd.Stdin {
-			cmd.Stdin = os.Stdin
-		}
-		if sh.CustomStd.Stderr {
-			cmd.Stderr = os.Stderr
-		}
-	} else { // Set the default values
-		cmd.Stderr = os.Stderr
-		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
-	}
+	sh.input = input
+	cmd := sh.setRunMode()
 	err := cmd.Start()
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+// Return formatted cmd
+func (sh Sh) GetCmdArg() *exec.Cmd {
+	cmd := sh.setRunMode()
+	return cmd
+}
+
+// window mode config
+func (sh Sh) SetWindowPSMode(mode winmode) {
+	sh.Windows.PowerShell.windowStyle.Enabled = true
+	switch mode {
+	case 0:
+		sh.Windows.PowerShell.windowStyle.Hidden = true
+	case 1:
+		sh.Windows.PowerShell.windowStyle.Maximized = true
+	case 2:
+		sh.Windows.PowerShell.windowStyle.Minimized = true
+	}
 }
