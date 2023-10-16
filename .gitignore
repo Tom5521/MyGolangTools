@@ -22,3 +22,4 @@ go.work
 
 # Custom
 commands_test.go
+main.go
