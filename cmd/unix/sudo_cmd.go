@@ -1,3 +1,6 @@
+//go:build unix
+// +build unix
+
 package unix
 
 import (
@@ -7,8 +10,8 @@ import (
 	"strings"
 )
 
-type sudo_sh struct {
-	sh
+type UnixSudoCmd struct {
+	UnixCmd
 	sudo_pars struct {
 		getted bool
 		Passwd string
@@ -16,8 +19,8 @@ type sudo_sh struct {
 }
 
 // Runs a command as sudo
-func Sudo_Cmd(command string, optional_password ...string) sudo_sh {
-	sudoSh := sudo_sh{}
+func Sudo_Cmd(command string, optional_password ...string) UnixSudoCmd {
+	sudoSh := UnixSudoCmd{}
 	sudoSh.input = command
 	if len(optional_password) >= 1 {
 		sudoSh.SetSudoPasswd(optional_password[0])
@@ -26,13 +29,13 @@ func Sudo_Cmd(command string, optional_password ...string) sudo_sh {
 }
 
 // Sudo parameters
-func (sh *sudo_sh) SetSudoPasswd(password string) {
+func (sh *UnixSudoCmd) SetSudoPasswd(password string) {
 	sh.sudo_pars.getted = true
 	sh.sudo_pars.Passwd = password
 }
 
 // Internal sudo functions
-func (sh sudo_sh) getExec() *exec.Cmd {
+func (sh UnixSudoCmd) getExec() *exec.Cmd {
 	var cmd *exec.Cmd
 	if sh.runWithShell.Enabled {
 		if sh.runWithShell.bash {
@@ -51,7 +54,7 @@ func (sh sudo_sh) getExec() *exec.Cmd {
 	return cmd
 }
 
-func (sh sudo_sh) writePasswd(cmd *exec.Cmd) {
+func (sh UnixSudoCmd) writePasswd(cmd *exec.Cmd) {
 	stdin, _ := cmd.StdinPipe()
 	go func() {
 		defer stdin.Close()
@@ -61,20 +64,20 @@ func (sh sudo_sh) writePasswd(cmd *exec.Cmd) {
 
 // sudo running funcions
 
-func (sh sudo_sh) Run() error {
+func (sh UnixSudoCmd) Run() error {
 	cmd := sh.getExec()
 	sh.setStd(cmd)
 	sh.writePasswd(cmd)
 	return cmd.Run()
 }
-func (sh sudo_sh) Out() (string, error) {
+func (sh UnixSudoCmd) Out() (string, error) {
 	cmd := sh.getExec()
 	sh.writePasswd(cmd)
 	out, err := cmd.Output()
 	return string(out), err
 }
 
-func (sh sudo_sh) CombinedOut() (string, error) {
+func (sh UnixSudoCmd) CombinedOut() (string, error) {
 	cmd := sh.getExec()
 	sh.setStd(cmd)
 	sh.writePasswd(cmd)
@@ -82,7 +85,7 @@ func (sh sudo_sh) CombinedOut() (string, error) {
 	return string(out), err
 }
 
-func (sh sudo_sh) Start() error {
+func (sh UnixSudoCmd) Start() error {
 	cmd := sh.getExec()
 	sh.setStd(cmd)
 	sh.writePasswd(cmd)

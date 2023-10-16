@@ -10,7 +10,7 @@ import (
 )
 
 // global struct
-type sh struct {
+type UnixCmd struct {
 	input string
 	path  struct {
 		Enabled bool
@@ -36,61 +36,61 @@ type sh struct {
 // Init functions
 
 // Runs a normal command (without sudo)
-func Cmd(Command string) sh {
-	sh := sh{input: Command}
+func Cmd(Command string) UnixCmd {
+	sh := UnixCmd{input: Command}
 	return sh
 }
 
 // General parameter funcions
-func (sh *sh) SetInput(input string) {
+func (sh *UnixCmd) SetInput(input string) {
 	sh.input = input
 }
-func (sh *sh) SetPath(path string) {
+func (sh *UnixCmd) SetPath(path string) {
 	sh.path.Enabled = true
 	sh.path.Path = path
 }
 
 // If the value is true use exec.Command([shell],[arg],input) instead of exec.Command(input[0],input[1:]...)
-func (sh *sh) RunWithShell(set bool) {
+func (sh *UnixCmd) RunWithShell(set bool) {
 	sh.runWithShell.Enabled = set
 }
 
 // Set a custom stdin,stdout or stderr. Default std is all in false
-func (sh *sh) CustomStd(Stdin, Stdout, Stderr bool) {
+func (sh *UnixCmd) CustomStd(Stdin, Stdout, Stderr bool) {
 	sh.customStd.Enable = true
 	sh.customStd.Stderr = Stderr
 	sh.customStd.Stdout = Stdout
 	sh.customStd.Stdin = Stdin
 }
-func (sh *sh) Stdin(set bool) {
+func (sh *UnixCmd) Stdin(set bool) {
 	sh.customStd.Enable = true
 	sh.customStd.Stdin = set
 }
-func (sh *sh) Stderr(set bool) {
+func (sh *UnixCmd) Stderr(set bool) {
 	sh.customStd.Enable = true
 	sh.customStd.Stderr = set
 }
-func (sh *sh) Stdout(set bool) {
+func (sh *UnixCmd) Stdout(set bool) {
 	sh.customStd.Enable = true
 	sh.customStd.Stdout = set
 }
 
 // Set a custom shell to exec the command
-func (sh *sh) CustomShell(Shell_Name, Exec_Arg string) {
+func (sh *UnixCmd) CustomShell(Shell_Name, Exec_Arg string) {
 	sh.RunWithShell(true)
 	sh.runWithShell.customSh.Enable = true
 	sh.runWithShell.customSh.ShArg = Exec_Arg
 	sh.runWithShell.customSh.ShName = Shell_Name
 }
 
-func (sh *sh) UseBashShell(set bool) {
+func (sh *UnixCmd) UseBashShell(set bool) {
 	sh.RunWithShell(true)
 	sh.runWithShell.bash = true
 }
 
 // Internal funcions
 
-func (sh sh) setStd(cmd *exec.Cmd) {
+func (sh UnixCmd) setStd(cmd *exec.Cmd) {
 	if sh.customStd.Enable {
 		std := sh.customStd
 		if std.Stderr {
@@ -104,7 +104,7 @@ func (sh sh) setStd(cmd *exec.Cmd) {
 		}
 	}
 }
-func (sh sh) getExec() *exec.Cmd {
+func (sh UnixCmd) getExec() *exec.Cmd {
 	var cmd *exec.Cmd
 	if sh.runWithShell.Enabled {
 		if sh.runWithShell.bash {
@@ -122,24 +122,24 @@ func (sh sh) getExec() *exec.Cmd {
 }
 
 // normal running funcions
-func (sh sh) Run() error {
+func (sh UnixCmd) Run() error {
 	cmd := sh.getExec()
 	sh.setStd(cmd)
 	return cmd.Run()
 }
-func (sh sh) Out() (string, error) {
+func (sh UnixCmd) Out() (string, error) {
 	cmd := sh.getExec()
 	out, err := cmd.Output()
 	return string(out), err
 }
-func (sh sh) CombinedOut() (string, error) {
+func (sh UnixCmd) CombinedOut() (string, error) {
 	cmd := sh.getExec()
 	sh.setStd(cmd)
 	out, err := cmd.CombinedOutput()
 	return string(out), err
 }
 
-func (sh sh) Start() error {
+func (sh UnixCmd) Start() error {
 	cmd := sh.getExec()
 	sh.setStd(cmd)
 	return cmd.Start()
