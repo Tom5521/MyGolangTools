@@ -3,6 +3,8 @@
 
 package win
 
+import "fmt"
+
 type WindowMode int
 
 const (
@@ -39,11 +41,78 @@ func PSCmd(input string) WinPS {
 	return sh
 }
 
+// Running functions
+
+func (sh WinPS) Run() error {
+	return sh.getFinal().Run()
+}
+
+func (sh WinPS) Out() (string, error) {
+	cmd := sh.getExec()
+	out, err := cmd.Output()
+	return string(out), err
+}
+
+func (sh WinPS) CombinedOut() (string, error) {
+	cmd := sh.getFinal()
+	out, err := cmd.CombinedOutput()
+	return string(out), err
+}
+
+func (sh WinPS) Start() error {
+	return sh.getFinal().Start()
+}
+
 // Internal functions
 
 func (sh WinPS) formatcmd() string {
-
-	return ""
+	var cmd string
+	if sh.runWithCmd {
+		cmd = "cmd /C "
+	} else {
+		PShArgs := sh.powerShell
+		var SetTA, interactive, profile, encoded, nologo, exit, windowStyle_pre, windowStyle_Arg string
+		if PShArgs.Mta && !PShArgs.Sta { // MTA set
+			SetTA = "-Mta "
+		}
+		if PShArgs.Sta && !PShArgs.Mta { // STA set
+			SetTA = "-Sta "
+		}
+		if PShArgs.NonInteractive {
+			interactive = "-NonInteractive "
+		}
+		if PShArgs.NoProfile {
+			profile = "-NoProfile "
+		}
+		if PShArgs.EncodedCommand {
+			encoded = "-EncodedCommand "
+		}
+		if PShArgs.NoLogo {
+			nologo = "-NoLogo "
+		}
+		if PShArgs.NoExit {
+			exit = "-NoExit "
+		}
+		if PShArgs.windowStyle.Enabled {
+			func() {
+				WSpar := PShArgs.windowStyle
+				windowStyle_pre = "-WindowStyle "
+				if WSpar.Hidden {
+					windowStyle_Arg = "Hidden"
+					return
+				}
+				if WSpar.Maximized {
+					windowStyle_Arg = "Maximized"
+					return
+				}
+				if WSpar.Minimized {
+					windowStyle_Arg = "Minimized"
+				}
+			}()
+		}
+		cmd = fmt.Sprintf("powershell.exe %v%v%v%v%v%v%v%v -Command %v", SetTA, interactive, profile, encoded, nologo, exit, windowStyle_pre, windowStyle_Arg, sh.input) // This is fucking infernal lol
+	}
+	return cmd
 }
 
 // Powershell config parameters
@@ -87,51 +156,3 @@ func (sh *WinPS) SetWindowPSMode(mode WindowMode) {
 		sh.powerShell.windowStyle.Minimized = true
 	}
 }
-
-// powershell logic
-/*
-if exec.runWithPowerShell {
-		PShArgs := exec.powerShell
-		var SetTA, interactive, profile, encoded, nologo, exit, windowStyle_pre, windowStyle_Arg string
-		if PShArgs.Mta && !PShArgs.Sta { // MTA set
-			SetTA = "-Mta "
-		}
-		if PShArgs.Sta && !PShArgs.Mta { // STA set
-			SetTA = "-Sta "
-		}
-		if PShArgs.NonInteractive {
-			interactive = "-NonInteractive "
-		}
-		if PShArgs.NoProfile {
-			profile = "-NoProfile "
-		}
-		if PShArgs.EncodedCommand {
-			encoded = "-EncodedCommand "
-		}
-		if PShArgs.NoLogo {
-			nologo = "-NoLogo "
-		}
-		if PShArgs.NoExit {
-			exit = "-NoExit "
-		}
-		if PShArgs.windowStyle.Enabled {
-			func() {
-				WSpar := PShArgs.windowStyle
-				windowStyle_pre = "-WindowStyle "
-				if WSpar.Hidden {
-					windowStyle_Arg = "Hidden"
-					return
-				}
-				if WSpar.Maximized {
-					windowStyle_Arg = "Maximized"
-					return
-				}
-				if WSpar.Minimized {
-					windowStyle_Arg = "Minimized"
-				}
-			}()
-		}
-		WindowsCommand = fmt.Sprintf("powershell.exe %v%v%v%v%v%v%v%v -Command %v", SetTA, interactive, profile, encoded, nologo, exit, windowStyle_pre, windowStyle_Arg, exec.input) // This is fucking infernal lol
-	}
-
-*/
