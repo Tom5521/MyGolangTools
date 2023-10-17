@@ -3,4 +3,6 @@
 
 package cmd
 
-func Cmd() {}
+func Cmd() {
+
+}

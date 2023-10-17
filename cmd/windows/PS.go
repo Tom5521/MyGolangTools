@@ -3,8 +3,10 @@
 
 package win
 
+type WindowMode int
+
 const (
-	PSWinmodeHidden winmode = iota
+	PSWinmodeHidden WindowMode = iota
 	PSWinmodeMaximized
 	PSWinmodeMinimized
 )
@@ -37,6 +39,13 @@ func PSCmd(input string) WinPS {
 	return sh
 }
 
+// Internal functions
+
+func (sh WinPS) formatcmd() string {
+
+	return ""
+}
+
 // Powershell config parameters
 
 func (sh *WinPS) SetPSNoLogo(set bool) {
@@ -67,7 +76,7 @@ func (sh *WinPS) SetPShNoInteractive(set bool) {
 	sh.powerShell.NonInteractive = set
 }
 
-func (sh *WinPS) SetWindowPSMode(mode winmode) {
+func (sh *WinPS) SetWindowPSMode(mode WindowMode) {
 	sh.powerShell.windowStyle.Enabled = true
 	switch mode {
 	case 0:

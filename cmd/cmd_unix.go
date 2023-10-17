@@ -3,7 +3,9 @@
 
 package cmd
 
-import "github.com/Tom5521/MyGolangTools/cmd/unix"
+import (
+	"github.com/Tom5521/MyGolangTools/cmd/unix"
+)
 
 func Cmd(input string) unix.UnixCmd {
 	return unix.Cmd(input)
